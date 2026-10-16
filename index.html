@@ -2,12 +2,32 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>game</title>
-<style>html,body{margin:0;height:100%;background:#000;display:flex;align-items:center;justify-content:center}canvas{image-rendering:pixelated;max-width:100%;max-height:100%;outline:0}</style>
+<style>
+html,body{margin:0;height:100%;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
+canvas{image-rendering:pixelated;max-width:100%;max-height:100%;outline:0;cursor:pointer}
+#hint{position:fixed;left:0;right:0;bottom:12px;text-align:center;color:#aaa;font:14px sans-serif;pointer-events:none}
+</style>
 <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+<div id="hint">click to capture mouse, Esc to release</div>
 <script>
+var canvas = document.getElementById("canvas");
+var hint = document.getElementById("hint");
+canvas.addEventListener("click", function () {
+	canvas.focus();
+	if (document.pointerLockElement !== canvas && canvas.requestPointerLock) canvas.requestPointerLock();
+});
+document.addEventListener("pointerlockchange", function () {
+	hint.style.display = document.pointerLockElement === canvas ? "none" : "block";
+});
+window.addEventListener("keydown", function (e) {
+	if (e.code === "Escape") { e.stopImmediatePropagation(); return; }
+	if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab", "F1", "F5", "F9"].indexOf(e.code) >= 0) e.preventDefault();
+}, true);
+window.addEventListener("keyup", function (e) {
+	if (e.code === "Escape") e.stopImmediatePropagation();
+}, true);
 var Module = {
-	canvas: document.getElementById("canvas"),
-	arguments: ["main.lua"],
+	canvas: canvas,
 	print: function (t) { console.log(t); },
 	printErr: function (t) { console.error(t); }
 };
