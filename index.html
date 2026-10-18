@@ -4,27 +4,35 @@
 <title>game</title>
 <style>
 html,body{margin:0;height:100%;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
-canvas{image-rendering:pixelated;max-width:100%;max-height:100%;outline:0;cursor:pointer}
-#hint{position:fixed;left:0;right:0;bottom:12px;text-align:center;color:#aaa;font:14px sans-serif;pointer-events:none}
+canvas{image-rendering:pixelated;max-width:100%;max-height:100%;outline:0}
+#hint{position:fixed;left:0;right:0;bottom:12px;text-align:center;color:#aaa;font:14px sans-serif;pointer-events:none;display:none}
 </style>
 <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
-<div id="hint">click to capture mouse, Esc to release</div>
+<div id="hint">click to capture mouse</div>
 <script>
 var canvas = document.getElementById("canvas");
 var hint = document.getElementById("hint");
-canvas.addEventListener("click", function () {
+function locked() { return document.pointerLockElement === canvas; }
+function try_lock() {
+	if (!Module.want_capture || locked() || !canvas.requestPointerLock) return;
+	var r = canvas.requestPointerLock();
+	if (r && r.catch) r.catch(function () {});
+}
+canvas.addEventListener("mousedown", function () {
 	canvas.focus();
-	if (document.pointerLockElement !== canvas && canvas.requestPointerLock) canvas.requestPointerLock();
+	try_lock();
 });
 document.addEventListener("pointerlockchange", function () {
-	hint.style.display = document.pointerLockElement === canvas ? "none" : "block";
+	if (locked() || !Module.want_capture) return;
+	var init = {keyCode: 27, which: 27, code: "Escape", key: "Escape", bubbles: true};
+	document.dispatchEvent(new KeyboardEvent("keydown", init));
+	setTimeout(function () { document.dispatchEvent(new KeyboardEvent("keyup", init)); }, 60);
 });
+setInterval(function () {
+	hint.style.display = Module.want_capture && !locked() ? "block" : "none";
+}, 200);
 window.addEventListener("keydown", function (e) {
-	if (e.code === "Escape") { e.stopImmediatePropagation(); return; }
 	if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab", "F1", "F5", "F9"].indexOf(e.code) >= 0) e.preventDefault();
-}, true);
-window.addEventListener("keyup", function (e) {
-	if (e.code === "Escape") e.stopImmediatePropagation();
 }, true);
 var Module = {
 	canvas: canvas,
